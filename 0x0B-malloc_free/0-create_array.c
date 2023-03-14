@@ -1,11 +1,28 @@
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#include "main.h"
+#include <stdlib.h>
 
-char *create_array(unsigned int size, char c);
-char *_strdup(char *str);
-char *str_concat(char *s1, char *s2);
-int **alloc_grid(int width, int height);
-void free_grid(int **grid, int height);
-char *argstostr(int ac, char **av);
+/**
+ * create_array - creates an array of chars.
+ * @size: size of the array.
+ * @c: storaged char
+ *
+ * Return: pointer of an array of chars
+ */
+char *create_array(unsigned int size, char c)
+{
+	char *cr;
+	unsigned int i;
 
-#endif
+	if (size == 0)
+		return (NULL);
+
+	cr = malloc(sizeof(c) * size);
+
+	if (cr == NULL)
+		return (NULL);
+
+	for (i = 0; i < size; i++)
+		cr[i] = c;
+
+	return (cr);
+}
