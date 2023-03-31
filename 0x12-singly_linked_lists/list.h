@@ -3,7 +3,7 @@
 
 /*
  * File: lists.h
- * Auth: Lawrence
+ * Auth: Brennan D Baraban
  * Desc: Header file containing prototypes and definitions for all functions
  *       and types written in the 0x11-singly_linked_lists directory.
  */
