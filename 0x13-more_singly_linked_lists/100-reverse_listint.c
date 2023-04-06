@@ -1,27 +1,23 @@
-#ifndef LISTS_H
-#define LISTS_H
-
-#include <stdlib.h>
-#include <stdio.h>
+#include "lists.h"
 
 /**
- * struct listint_s - Singly linked list node
- * @n: Integer data
- * @next: Pointer to the next node
+ * reverse_listint - Reverses a linked list
+ * @head: Head of the linked list
  *
- * Description: Singly linked list node structure
+ * Return: Pointer to the first node of the reversed list
  */
-typedef struct listint_s
+listint_t *reverse_listint(listint_t **head)
 {
-    int n;
-    struct listint_s *next;
-} listint_t;
+    listint_t *prev_node = NULL, *next_node = NULL;
 
-/* Function prototypes */
-size_t print_listint(const listint_t *h);
-listint_t *add_nodeint_end(listint_t **head, const int n);
-void free_listint2(listint_t **head);
-listint_t *reverse_listint(listint_t **head);
+    while (*head != NULL)
+    {
+        next_node = (*head)->next;
+        (*head)->next = prev_node;
+        prev_node = *head;
+        *head = next_node;
+    }
 
-#endif /* LISTS_H */
-
+    *head = prev_node;
+    return (*head);
+}
