@@ -6,15 +6,21 @@
  */
 void print_binary(unsigned long int n)
 {
-    unsigned long int mask = 1;
-    int len = sizeof(n) * 8 - 1;
-    int i;
+	int i, count = 0;
+	unsigned long int current;
 
-    for (i = len; i >= 0; i--)
-    {
-        if ((n >> i) & mask)
-            _putchar('1');
-        else
-            _putchar('0');
-    }
+	for (i = 63; i >= 0; i--)
+	{
+		current = n >> i;
+
+		if (current & 1)
+		{
+			_putchar('1');
+			count++;
+		}
+		else if (count)
+			_putchar('0');
+	}
+	if (!count)
+		_putchar('0');
 }
