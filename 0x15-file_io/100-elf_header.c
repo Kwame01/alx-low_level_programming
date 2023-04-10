@@ -1,100 +1,103 @@
-#include <elf.h>
-#include <fcntl.h>
+#include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+
+char *create_buffer(char *file);
+void close_file(int fd);
 
 /**
- * main - displays the information contained in the ELF header at the start
- * of an ELF file.
- * @argc: The argument count
- * @argv: The argument vector
+ * create_buffer - Allocates 1024 bytes for a buffer.
+ * @file: The name of the file buffer is storing chars for.
  *
- * Return: 0 on success, otherwise 98
+ * Return: A pointer to the newly-allocated buffer.
  */
-int main(int argc, char **argv)
+char *create_buffer(char *file)
 {
-        int fd, ret;
-        Elf64_Ehdr header;
-        unsigned char magic[4] = {0x7f, 0x45, 0x4c, 0x46};
+	char *buffer;
 
-        if (argc != 2)
-        {
-                dprintf(STDERR_FILENO, "Usage: %s elf_filename\n", argv[0]);
-                exit(98);
-        }
+	buffer = malloc(sizeof(char) * 1024);
 
-        fd = open(argv[1], O_RDONLY);
-        if (fd == -1)
-        {
-                dprintf(STDERR_FILENO, "Error: Cannot read file %s\n", argv[1]);
-                exit(98);
-        }
+	if (buffer == NULL)
+	{
+		dprintf(STDERR_FILENO,
+			"Error: Can't write to %s\n", file);
+		exit(99);
+	}
 
-        ret = read(fd, &header, sizeof(header));
-        if (ret == -1)
-        {
-                dprintf(STDERR_FILENO, "Error: Cannot read file %s\n", argv[1]);
-                close(fd);
-                exit(98);
-        }
+	return (buffer);
+}
 
-        if (header.e_ident[0] != magic[0] || header.e_ident[1] != magic[1] ||
-            header.e_ident[2] != magic[2] || header.e_ident[3] != magic[3])
-        {
-                dprintf(STDERR_FILENO, "Error: Not an ELF file - it has the wrong magic bytes\n");
-                close(fd);
-                exit(98);
-        }
+/**
+ * close_file - Closes file descriptors.
+ * @fd: The file descriptor to be closed.
+ */
+void close_file(int fd)
+{
+	int c;
 
-        printf("ELF Header:\n");
+	c = close(fd);
 
-        printf("  Magic:   ");
-        for (int i = 0; i < EI_NIDENT; i++)
-                printf("%02x ", header.e_ident[i]);
-        printf("\n");
+	if (c == -1)
+	{
+		dprintf(STDERR_FILENO, "Error: Can't close fd %d\n", fd);
+		exit(100);
+	}
+}
 
-        printf("  Class:                             ");
-        if (header.e_ident[EI_CLASS] == ELFCLASS32)
-                printf("ELF32\n");
-        else if (header.e_ident[EI_CLASS] == ELFCLASS64)
-                printf("ELF64\n");
-        else
-                printf("<unknown: %x>\n", header.e_ident[EI_CLASS]);
+/**
+ * main - Copies the contents of a file to another file.
+ * @argc: The number of arguments supplied to the program.
+ * @argv: An array of pointers to the arguments.
+ *
+ * Return: 0 on success.
+ *
+ * Description: If the argument count is incorrect - exit code 97.
+ * If file_from does not exist or cannot be read - exit code 98.
+ * If file_to cannot be created or written to - exit code 99.
+ * If file_to or file_from cannot be closed - exit code 100.
+ */
+int main(int argc, char *argv[])
+{
+	int from, to, r, w;
+	char *buffer;
 
-        printf("  Data:                              ");
-        if (header.e_ident[EI_DATA] == ELFDATA2LSB)
-                printf("2's complement, little endian\n");
-        else if (header.e_ident[EI_DATA] == ELFDATA2MSB)
-                printf("2's complement, big endian\n");
-        else
-                printf("<unknown: %x>\n", header.e_ident[EI_DATA]);
+	if (argc != 3)
+	{
+		dprintf(STDERR_FILENO, "Usage: cp file_from file_to\n");
+		exit(97);
+	}
 
-        printf("  Version:                           %d (current)\n",
-               header.e_ident[EI_VERSION]);
+	buffer = create_buffer(argv[2]);
+	from = open(argv[1], O_RDONLY);
+	r = read(from, buffer, 1024);
+	to = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0664);
 
-        printf("  OS/ABI:                            ");
-        switch (header.e_ident[EI_OSABI])
-        {
-        case ELFOSABI_SYSV:
-                printf("UNIX - System V\n");
-                break;
-        case ELFOSABI_LINUX:
-                printf("UNIX - Linux\n");
-                break;
-        case ELFOSABI_SOLARIS:
-                printf("UNIX - Solaris\n");
-                break;
-        case ELFOSABI_FREEBSD:
-                printf("UNIX - FreeBSD\n");
-                break;
-        case ELFOSABI_NETBSD:
-                printf("UNIX - NetBSD\n");
-                break;
-        case ELFOSABI_OPENBSD:
-                printf("UNIX - OpenBSD\n");
-                break;
-        case ELFOSABI_ARM:
-                printf("
+	do {
+		if (from == -1 || r == -1)
+		{
+			dprintf(STDERR_FILENO,
+				"Error: Can't read from file %s\n", argv[1]);
+			free(buffer);
+			exit(98);
+		}
+
+		w = write(to, buffer, r);
+		if (to == -1 || w == -1)
+		{
+			dprintf(STDERR_FILENO,
+				"Error: Can't write to %s\n", argv[2]);
+			free(buffer);
+			exit(99);
+		}
+
+		r = read(from, buffer, 1024);
+		to = open(argv[2], O_WRONLY | O_APPEND);
+
+	} while (r > 0);
+
+	free(buffer);
+	close_file(from);
+	close_file(to);
+
+	return (0);
+}
